@@ -4,12 +4,16 @@
 
 package frc.robot;
 
+import com.revrobotics.CANSparkMax;
+import com.revrobotics.CANSparkMaxLowLevel.MotorType;
+
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.wpilibj.AnalogGyro;
+import edu.wpi.first.wpilibj.AnalogInput;
 
 /** Represents a swerve drive style drivetrain. */
 public class Drivetrain {
@@ -21,10 +25,24 @@ public class Drivetrain {
   private final Translation2d m_backLeftLocation = new Translation2d(-0.381, 0.381);
   private final Translation2d m_backRightLocation = new Translation2d(-0.381, -0.381);
 
-  private final SwerveModule m_frontLeft = new SwerveModule(1, 2, 0, 1, 2, 3);
-  private final SwerveModule m_frontRight = new SwerveModule(3, 4, 4, 5, 6, 7);
-  private final SwerveModule m_backLeft = new SwerveModule(5, 6, 8, 9, 10, 11);
-  private final SwerveModule m_backRight = new SwerveModule(7, 8, 12, 13, 14, 15);
+  private final SwerveModule m_frontLeft = new SwerveModule(
+      new CANSparkMax(Constants.DrivetainMotors.kDriveMotorFrontLeft, MotorType.kBrushless), 
+      new CANSparkMax(Constants.DrivetainMotors.kRotationMotorFrontLeft, MotorType.kBrushless), 
+      new AnalogInput(Constants.AnalogEncoders.encoderFrontLeft)); //1, 2, 0, 1, 2, 3
+  private final SwerveModule m_frontRight = new SwerveModule(
+    new CANSparkMax(Constants.DrivetainMotors.kDriveMotorFrontRight, MotorType.kBrushless), 
+    new CANSparkMax(Constants.DrivetainMotors.kRotationMotorFrontRight, MotorType.kBrushless), 
+    new AnalogInput(Constants.AnalogEncoders.encoderFrontRight));
+  private final SwerveModule m_backLeft = new SwerveModule(
+    new CANSparkMax(Constants.DrivetainMotors.kDriveMotorBackLeft, MotorType.kBrushless),
+    new CANSparkMax(Constants.DrivetainMotors.kDriveMotorBackLeft, MotorType.kBrushless),
+    new AnalogInput(Constants.AnalogEncoders.encoderBackLeft)
+  );
+  private final SwerveModule m_backRight = new SwerveModule(
+    new CANSparkMax(Constants.DrivetainMotors.kDriveMotorBackRight, MotorType.kBrushless),
+    new CANSparkMax(Constants.DrivetainMotors.kRotationMotorBackRight, MotorType.kBrushless),
+    new AnalogInput(Constants.AnalogEncoders.encoderBackRight)
+  );
 
   private final AnalogGyro m_gyro = new AnalogGyro(0);
 
