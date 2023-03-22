@@ -17,6 +17,7 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj.AnalogEncoder;
 import edu.wpi.first.wpilibj.AnalogInput;
+import edu.wpi.first.wpilibj.DutyCycleEncoder;
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.motorcontrol.MotorController;
 import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
@@ -34,7 +35,7 @@ public class SwerveModule {
   public RelativeEncoder m_driveEncoder;
   public RelativeEncoder m_turningEncoder;
 
-  private AnalogInput m_AnalogEncoder;
+  private DutyCycleEncoder m_AnalogEncoder;
 
   // Gains are for example purposes only - must be determined for your own robot!
   private final PIDController m_drivePIDController = new PIDController(1, 0, 0);
@@ -52,12 +53,24 @@ public class SwerveModule {
   private final SimpleMotorFeedforward m_driveFeedforward = new SimpleMotorFeedforward(1, 3);
   private final SimpleMotorFeedforward m_turnFeedforward = new SimpleMotorFeedforward(1, 0.5);
 
-  public SwerveModule(CANSparkMax driveMotorChannel, CANSparkMax turningMotorChannel, AnalogInput analogInput) {
+  public SwerveModule(CANSparkMax driveMotorChannel, CANSparkMax turningMotorChannel, DutyCycleEncoder analogInput) {
     this.m_AnalogEncoder = analogInput;
     this.m_driveMotor = driveMotorChannel;
     this.m_turningMotor = turningMotorChannel;
+    this.m_driveEncoder = driveMotorChannel.getEncoder();
+    this.m_turningEncoder = turningMotorChannel.getEncoder();
 
-    
+    m_driveEncoder = driveMotorChannel.getEncoder();
+    m_turningEncoder = turningMotorChannel.getEncoder();
+
+    m_driveEncoder.setPositionConversionFactor(4*Math.PI/(6.095));
+    m_driveEncoder.setVelocityConversionFactor(4*Math.PI/(6.095));
+
+
+    m_turningEncoder.setPositionConversionFactor(2*Math.PI/(13.738));
+    m_turningEncoder.setVelocityConversionFactor(2*Math.PI/(13.738));
+
+    m_turningPIDController.enableContinuousInput(-Math.PI, Math.PI);
   }
 
   /**
@@ -77,7 +90,7 @@ public class SwerveModule {
    */
   public SwerveModulePosition getPosition() {
     return new SwerveModulePosition(
-        m_driveEncoder.getPositionConversionFactor(), new Rotation2d(m_turningEncoder.getPositionConversionFactor()));
+        m_driveEncoder.getPosition(), new Rotation2d(m_turningEncoder.getPosition()));
   }
 
   /**
@@ -98,7 +111,7 @@ public class SwerveModule {
 
     // Calculate the turning motor output from the turning PID controller.
     final double turnOutput =
-        m_turningPIDController.calculate(m_turningEncoder.getPositionConversionFactor(), state.angle.getRadians());
+        m_turningPIDController.calculate(m_turningEncoder.getVelocity(), state.angle.getRadians());
 
     final double turnFeedforward =
         m_turnFeedforward.calculate(m_turningPIDController.getSetpoint().velocity);

@@ -4,6 +4,7 @@
 
 package frc.robot;
 
+import com.kauailabs.navx.frc.AHRS;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
@@ -14,6 +15,8 @@ import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.wpilibj.AnalogGyro;
 import edu.wpi.first.wpilibj.AnalogInput;
+import edu.wpi.first.wpilibj.DutyCycleEncoder;
+import edu.wpi.first.wpilibj.SPI.Port;
 
 /** Represents a swerve drive style drivetrain. */
 public class Drivetrain {
@@ -28,24 +31,24 @@ public class Drivetrain {
   private final SwerveModule m_frontLeft = new SwerveModule(
       new CANSparkMax(Constants.DrivetainMotors.kDriveMotorFrontLeft, MotorType.kBrushless), 
       new CANSparkMax(Constants.DrivetainMotors.kRotationMotorFrontLeft, MotorType.kBrushless), 
-      new AnalogInput(Constants.AnalogEncoders.encoderFrontLeft)); //1, 2, 0, 1, 2, 3
+      new DutyCycleEncoder(Constants.AnalogEncoders.encoderFrontLeft)); //1, 2, 0, 1, 2, 3
   private final SwerveModule m_frontRight = new SwerveModule(
     new CANSparkMax(Constants.DrivetainMotors.kDriveMotorFrontRight, MotorType.kBrushless), 
     new CANSparkMax(Constants.DrivetainMotors.kRotationMotorFrontRight, MotorType.kBrushless), 
-    new AnalogInput(Constants.AnalogEncoders.encoderFrontRight));
+    new DutyCycleEncoder(Constants.AnalogEncoders.encoderFrontRight));
   private final SwerveModule m_backLeft = new SwerveModule(
     new CANSparkMax(Constants.DrivetainMotors.kDriveMotorBackLeft, MotorType.kBrushless),
-    new CANSparkMax(Constants.DrivetainMotors.kDriveMotorBackLeft, MotorType.kBrushless),
-    new AnalogInput(Constants.AnalogEncoders.encoderBackLeft)
+    new CANSparkMax(Constants.DrivetainMotors.kRotationMotorBackLeft, MotorType.kBrushless),
+    new DutyCycleEncoder(Constants.AnalogEncoders.encoderBackLeft)
   );
   private final SwerveModule m_backRight = new SwerveModule(
     new CANSparkMax(Constants.DrivetainMotors.kDriveMotorBackRight, MotorType.kBrushless),
     new CANSparkMax(Constants.DrivetainMotors.kRotationMotorBackRight, MotorType.kBrushless),
-    new AnalogInput(Constants.AnalogEncoders.encoderBackRight)
+    new DutyCycleEncoder(Constants.AnalogEncoders.encoderBackRight)
   );
 
-  private final AnalogGyro m_gyro = new AnalogGyro(0);
-
+  public AHRS navx = new AHRS(Port.kMXP);
+  
   private final SwerveDriveKinematics m_kinematics =
       new SwerveDriveKinematics(
           m_frontLeftLocation, m_frontRightLocation, m_backLeftLocation, m_backRightLocation);
@@ -53,7 +56,7 @@ public class Drivetrain {
   private final SwerveDriveOdometry m_odometry =
       new SwerveDriveOdometry(
           m_kinematics,
-          m_gyro.getRotation2d(),
+          navx.getRotation2d(),
           new SwerveModulePosition[] {
             m_frontLeft.getPosition(),
             m_frontRight.getPosition(),
@@ -62,7 +65,7 @@ public class Drivetrain {
           });
 
   public Drivetrain() {
-    m_gyro.reset();
+    navx.reset();
   }
 
   /**
@@ -77,7 +80,7 @@ public class Drivetrain {
     var swerveModuleStates =
         m_kinematics.toSwerveModuleStates(
             fieldRelative
-                ? ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, rot, m_gyro.getRotation2d())
+                ? ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, rot, navx.getRotation2d())
                 : new ChassisSpeeds(xSpeed, ySpeed, rot));
     SwerveDriveKinematics.desaturateWheelSpeeds(swerveModuleStates, kMaxSpeed);
     m_frontLeft.setDesiredState(swerveModuleStates[0]);
@@ -89,7 +92,7 @@ public class Drivetrain {
   /** Updates the field relative position of the robot. */
   public void updateOdometry() {
     m_odometry.update(
-        m_gyro.getRotation2d(),
+        navx.getRotation2d(),
         new SwerveModulePosition[] {
           m_frontLeft.getPosition(),
           m_frontRight.getPosition(),

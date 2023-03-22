@@ -9,8 +9,8 @@ import edu.wpi.first.math.util.Units;
 /** Add your docs here. */
 public class Constants {
     public static class DrivetainMotors{
-        public static int kDriveMotorFrontLeft = 1;
-        public static int kRotationMotorFrontLeft = 2;
+        public static int kDriveMotorFrontLeft = 2;
+        public static int kRotationMotorFrontLeft = 1;
         public static int kDriveMotorBackLeft = 3;
         public static int kRotationMotorBackLeft = 4;
         public static int kRotationMotorBackRight = 12;
