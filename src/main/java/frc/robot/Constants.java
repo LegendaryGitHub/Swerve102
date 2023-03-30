@@ -24,4 +24,9 @@ public class Constants {
         public static int encoderBackLeft = 2;
         public static int encoderFrontRight = 3;
     }
+
+    public static class otherVars {
+        public static double kDriveEncoderDistance = 0.5; // this is a temp value needs tuning
+        public static double kMaxSpeedMetersPerSecond = 4.233672; // From WCP themselves
+    }
 }
