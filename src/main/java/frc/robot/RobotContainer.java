@@ -24,7 +24,7 @@ public class RobotContainer extends CommandBase {
 
   public Joystick driver = new Joystick(0);
   SendableChooser<Command> autoChooser = new SendableChooser<>();
-  
+
   /**
  * This class is where the bulk of the robot should be declared. Since Command-based is a
  * "declarative" paradigm, very little robot logic should actually be handled in the {@link Robot}

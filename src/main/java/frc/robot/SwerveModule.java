@@ -7,24 +7,17 @@ package frc.robot;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.SparkMaxPIDController;
-import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
 import edu.wpi.first.math.controller.PIDController;
-import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
-import edu.wpi.first.math.trajectory.TrapezoidProfile;
-import edu.wpi.first.wpilibj.AnalogEncoder;
-import edu.wpi.first.wpilibj.AnalogInput;
+import edu.wpi.first.util.sendable.Sendable;
+import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.DutyCycleEncoder;
-import edu.wpi.first.wpilibj.Encoder;
-import edu.wpi.first.wpilibj.motorcontrol.MotorController;
-import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
-public class SwerveModule {
+public class SwerveModule implements Sendable {
   private static final double kWheelRadius = 2;
   private static final int kEncoderResolution = 4096;
 
@@ -39,7 +32,7 @@ public class SwerveModule {
 
   private DutyCycleEncoder AnalogEncoder;
 
-  private double offsetAngle;
+  private double offsetAngle = 0;
 
   public boolean openLoopDrive = false;
 
@@ -91,6 +84,7 @@ public class SwerveModule {
     this.turningMotor = turningMotorChannel;
     this.driveEncoder = driveMotorChannel.getEncoder();
     this.turningEncoder = turningMotorChannel.getEncoder();
+    // this.rotatePIDController = rotatePIDController;
 
     driveEncoder = driveMotorChannel.getEncoder();
     turningEncoder = turningMotorChannel.getEncoder();
@@ -100,16 +94,8 @@ public class SwerveModule {
     // Not sure if needed
     // turningMotor.setInverted(true);
 
-
-    // driveEncoder.setPositionConversionFactor(4*Math.PI/(6.095));
-    // driveEncoder.setVelocityConversionFactor(4*Math.PI/(6.095));
-
-    // turningEncoder.setPositionConversionFactor(2*Math.PI/(13.738));
-    // turningEncoder.setVelocityConversionFactor(2*Math.PI/(13.738));
-
-    // m_turningPIDController.enableContinuousInput(-Math.PI, Math.PI);
-
     drivePIDController = driveMotor.getPIDController();
+    rotatePIDController = turningMotor.getPIDController();
 
     //Set PID values for drive, needs tuning!! Temp values
     kP_drive = 0;
@@ -160,8 +146,8 @@ public class SwerveModule {
     rotatePIDController.setIZone(kIz_rotate);
     rotatePIDController.setFF(kFF_rotate);
 
-    turningPIDController =  new PIDController(1, 0, 0); //temp
-    turningPIDController.enableContinuousInput(-Math.PI, Math.PI);
+    // turningPIDController =  new PIDController(3*4/(Math.PI*2), 0, 0); //temp
+    // turningPIDController.enableContinuousInput(-Math.PI, Math.PI);
 
     resetEncoders();
   }
@@ -259,4 +245,20 @@ public class SwerveModule {
     driveMotor.set(0);
     turningMotor.set(0);
   }
+  
+  // Get the absoluteEncoder data
+  public double getAbsoluteEncoder() {
+    return AnalogEncoder.getAbsolutePosition();
+  }
+
+  @Override
+  public void initSendable(SendableBuilder builder) {
+    builder.setSmartDashboardType("SwerveModule");
+    builder.addDoubleProperty("angle", this::getModuleAngle, null);
+    builder.addDoubleProperty("distance", this::getDriveEncoderVelocityMetersPerSec, null);
+    builder.addDoubleProperty("absoluteEncoder", this::getAbsoluteEncoder, null);
+  }
+
+  
+
 }

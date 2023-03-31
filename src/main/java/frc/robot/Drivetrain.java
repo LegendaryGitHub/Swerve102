@@ -17,6 +17,7 @@ import edu.wpi.first.wpilibj.AnalogGyro;
 import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.DutyCycleEncoder;
 import edu.wpi.first.wpilibj.SPI.Port;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 /** Represents a swerve drive style drivetrain. */
 public class Drivetrain {
@@ -66,6 +67,12 @@ public class Drivetrain {
 
   public Drivetrain() {
     navx.reset();
+
+    //Rotation/Drive/AbsEncoder SmartDashboard
+    SmartDashboard.putData("drivetrain/backRight/rotate",m_backRight);
+    SmartDashboard.putData("drivetrain/backLeft/rotate",m_backLeft);
+    SmartDashboard.putData("drivetrain/frontRight/rotate",m_frontRight);
+    SmartDashboard.putData("drivetrain/frontLeft/rotate",m_frontLeft);
   }
 
   /**
