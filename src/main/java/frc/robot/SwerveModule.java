@@ -8,29 +8,34 @@ import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.SparkMaxPIDController;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.DutyCycleEncoder;
 
 public class SwerveModule implements Sendable {
-  private static final double kWheelRadius = 2;
+  private static final double kDriveGearing=1/7.13;
+  private static final double kWheelRadius = Units.inchesToMeters(2);
+  private static final double kAzimuthGearing=1/13.71;
+
   private static final int kEncoderResolution = 4096;
 
   private static final double kModuleMaxAngularVelocity = Drivetrain.kMaxAngularSpeed;
   private static final double kModuleMaxAngularAcceleration = 2 * Math.PI; // radians per second squared
 
   private CANSparkMax driveMotor;
-  private CANSparkMax turningMotor;
+  private CANSparkMax azimuthMotor;
 
   private RelativeEncoder driveEncoder;
-  private RelativeEncoder turningEncoder;
+  private RelativeEncoder azimuthEncoder;
 
-  private DutyCycleEncoder AnalogEncoder;
+  private DutyCycleEncoder absoluteEncoder;
 
   private double offsetAngle = 0;
 
@@ -79,23 +84,23 @@ public class SwerveModule implements Sendable {
 
   //Main construction for swerve 
   public SwerveModule(CANSparkMax driveMotorChannel, CANSparkMax turningMotorChannel, DutyCycleEncoder analogInput) {
-    this.AnalogEncoder = analogInput;
+    this.absoluteEncoder = analogInput;
     this.driveMotor = driveMotorChannel;
-    this.turningMotor = turningMotorChannel;
+    this.azimuthMotor = turningMotorChannel;
     this.driveEncoder = driveMotorChannel.getEncoder();
-    this.turningEncoder = turningMotorChannel.getEncoder();
+    this.azimuthEncoder = turningMotorChannel.getEncoder();
     // this.rotatePIDController = rotatePIDController;
 
     driveEncoder = driveMotorChannel.getEncoder();
-    turningEncoder = turningMotorChannel.getEncoder();
+    azimuthEncoder = turningMotorChannel.getEncoder();
 
     driveMotor.restoreFactoryDefaults();
-    turningMotor.restoreFactoryDefaults();
+    azimuthMotor.restoreFactoryDefaults();
     // Not sure if needed
     // turningMotor.setInverted(true);
 
     drivePIDController = driveMotor.getPIDController();
-    rotatePIDController = turningMotor.getPIDController();
+    rotatePIDController = azimuthMotor.getPIDController();
 
     //Set PID values for drive, needs tuning!! Temp values
     kP_drive = 0;
@@ -108,6 +113,14 @@ public class SwerveModule implements Sendable {
     maxRPM_drive = 0;
     maxVel_drive = 0;
     maxAcc_drive = 0;
+
+    // var gearing=1;
+    // var kWheelRadius=3;
+    driveEncoder.setPositionConversionFactor( 1/kDriveGearing*kWheelRadius*2*Math.PI );
+    driveEncoder.setVelocityConversionFactor( 1/kDriveGearing*kWheelRadius*2*Math.PI * 60);
+
+    azimuthEncoder.setPositionConversionFactor(kAzimuthGearing *2*Math.PI);
+    azimuthEncoder.setVelocityConversionFactor(kAzimuthGearing *2*Math.PI * 60);
 
     //Set PIDs for drive
     drivePIDController.setP(kP_drive);
@@ -157,10 +170,10 @@ public class SwerveModule implements Sendable {
    *
    * @return The current state of the module.
    */
-  public SwerveModuleState getState() {
-    return new SwerveModuleState(
-        getDriveEncoderVelocityMetersPerSec(), new Rotation2d(getDriveVelocity()));
-  }
+  // public SwerveModuleState getState() {
+  //   return new SwerveModuleState(
+  //       getDriveEncoderVelocityMetersPerSec(), new Rotation2d(getDriveVelocity()));
+  // }
 
   // Get the current velocity
   public double getDriveVelocity() {
@@ -179,7 +192,7 @@ public class SwerveModule implements Sendable {
    */
   public SwerveModulePosition getPosition() {
     return new SwerveModulePosition(
-        driveEncoder.getPosition(), new Rotation2d(turningEncoder.getPosition()));
+        driveEncoder.getPosition(), new Rotation2d(azimuthEncoder.getPosition()));
   }
 
   // Get the current position
@@ -188,19 +201,17 @@ public class SwerveModule implements Sendable {
   }
   // Get the module angle 
   // Does this by taking in the raw angle (current rotations times 360 minus the offset )
-  public double getModuleAngle() {
-    double rawAngle = (turningEncoder.getPosition() * 360 - this.offsetAngle) % 360;
-    double angle;
-    if (rawAngle > 180.0 && rawAngle < 360.0) {
-      angle = -180 + rawAngle % 180;
-    } else {
-      angle = rawAngle;
-    }
-    return angle;
+  public double getAbsoluteAngle() {
+    double rawAngle = absoluteEncoder.getAbsolutePosition()*Math.PI*2;
+    return MathUtil.angleModulus(rawAngle);
+    // return rawAngle;
   }
   // Get the module randians
-  public double getModuleAngleRadians() {
-    return getModuleAngle() * Math.PI / 180.0;
+  public double getAngleRadians() {
+    return MathUtil.angleModulus( azimuthEncoder.getPosition() );
+  }
+  public double getAngleDegrees() {
+    return Math.toDegrees( azimuthEncoder.getPosition() );
   }
 
   /**
@@ -213,7 +224,7 @@ public class SwerveModule implements Sendable {
       stop();
       return;
     }
-    state = SwerveModuleState.optimize(state, new Rotation2d(getModuleAngleRadians()));
+    state = SwerveModuleState.optimize(state, new Rotation2d(getAngleRadians()));
 
     double motorRPM = getMotorRPMFromDriveVelocity(state.speedMetersPerSecond);
 
@@ -227,7 +238,7 @@ public class SwerveModule implements Sendable {
       drivePIDController.setReference(0, CANSparkMax.ControlType.kSmartVelocity);
     }
 
-    turningMotor.set(turningPIDController.calculate(getModuleAngleRadians(), state.angle.getRadians()));
+    azimuthMotor.set(turningPIDController.calculate(getAngleRadians(), state.angle.getRadians()));
   }
 
   //Motor RPMS 
@@ -237,26 +248,27 @@ public class SwerveModule implements Sendable {
   //Reset the encoders
   public void resetEncoders() {
     driveEncoder.setPosition(0);
-    AnalogEncoder.reset();
+    azimuthEncoder.setPosition(0);
   }
 
   //Emergency 
   private void stop() {
     driveMotor.set(0);
-    turningMotor.set(0);
+    azimuthMotor.set(0);
   }
   
   // Get the absoluteEncoder data
   public double getAbsoluteEncoder() {
-    return AnalogEncoder.getAbsolutePosition();
+    return absoluteEncoder.getAbsolutePosition();
   }
 
   @Override
   public void initSendable(SendableBuilder builder) {
     builder.setSmartDashboardType("SwerveModule");
-    builder.addDoubleProperty("angle", this::getModuleAngle, null);
-    builder.addDoubleProperty("distance", this::getDriveEncoderVelocityMetersPerSec, null);
-    builder.addDoubleProperty("absoluteEncoder", this::getAbsoluteEncoder, null);
+    builder.addDoubleProperty("angle(abs)", this::getAbsoluteAngle, null);
+    builder.addDoubleProperty("distance", ()->driveEncoder.getPosition(), null);
+    builder.addDoubleProperty("angle(rad)", this::getAngleRadians, null);
+    builder.addDoubleProperty("angle(deg)", this::getAngleDegrees, null);
   }
 
   

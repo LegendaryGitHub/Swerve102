@@ -69,10 +69,10 @@ public class Drivetrain {
     navx.reset();
 
     //Rotation/Drive/AbsEncoder SmartDashboard
-    SmartDashboard.putData("drivetrain/backRight/rotate",m_backRight);
-    SmartDashboard.putData("drivetrain/backLeft/rotate",m_backLeft);
-    SmartDashboard.putData("drivetrain/frontRight/rotate",m_frontRight);
-    SmartDashboard.putData("drivetrain/frontLeft/rotate",m_frontLeft);
+    SmartDashboard.putData("drivetrain/backRight/",m_backRight);
+    SmartDashboard.putData("drivetrain/backLeft/",m_backLeft);
+    SmartDashboard.putData("drivetrain/frontRight/",m_frontRight);
+    SmartDashboard.putData("drivetrain/frontLeft/",m_frontLeft);
   }
 
   /**
