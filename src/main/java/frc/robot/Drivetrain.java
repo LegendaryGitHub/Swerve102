@@ -13,7 +13,6 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
-import edu.wpi.first.wpilibj.AnalogGyro;
 import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.DutyCycleEncoder;
 import edu.wpi.first.wpilibj.SPI.Port;
@@ -32,21 +31,27 @@ public class Drivetrain {
   private final SwerveModule m_frontLeft = new SwerveModule(
       new CANSparkMax(Constants.DrivetainMotors.kDriveMotorFrontLeft, MotorType.kBrushless), 
       new CANSparkMax(Constants.DrivetainMotors.kRotationMotorFrontLeft, MotorType.kBrushless), 
-      new DutyCycleEncoder(Constants.AnalogEncoders.encoderFrontLeft)); //1, 2, 0, 1, 2, 3
+      new DutyCycleEncoder(Constants.AnalogEncoders.encoderFrontLeft),
+      false
+      ); //1, 2, 0, 1, 2, 3
   private final SwerveModule m_frontRight = new SwerveModule(
     new CANSparkMax(Constants.DrivetainMotors.kDriveMotorFrontRight, MotorType.kBrushless), 
     new CANSparkMax(Constants.DrivetainMotors.kRotationMotorFrontRight, MotorType.kBrushless), 
-    new DutyCycleEncoder(Constants.AnalogEncoders.encoderFrontRight));
+    new DutyCycleEncoder(Constants.AnalogEncoders.encoderFrontRight),
+    false
+    );
   private final SwerveModule m_backLeft = new SwerveModule(
     new CANSparkMax(Constants.DrivetainMotors.kDriveMotorBackLeft, MotorType.kBrushless),
     new CANSparkMax(Constants.DrivetainMotors.kRotationMotorBackLeft, MotorType.kBrushless),
-    new DutyCycleEncoder(Constants.AnalogEncoders.encoderBackLeft)
+    new DutyCycleEncoder(Constants.AnalogEncoders.encoderBackLeft), true
   );
   private final SwerveModule m_backRight = new SwerveModule(
     new CANSparkMax(Constants.DrivetainMotors.kDriveMotorBackRight, MotorType.kBrushless),
     new CANSparkMax(Constants.DrivetainMotors.kRotationMotorBackRight, MotorType.kBrushless),
-    new DutyCycleEncoder(Constants.AnalogEncoders.encoderBackRight)
+    new DutyCycleEncoder(Constants.AnalogEncoders.encoderBackRight), 
+    true
   );
+
 
   public AHRS navx = new AHRS(Port.kMXP);
   
@@ -84,7 +89,7 @@ public class Drivetrain {
    * @param fieldRelative Whether the provided x and y speeds are relative to the field.
    */
   public void drive(double xSpeed, double ySpeed, double rot, boolean fieldRelative) {
-    var swerveModuleStates =
+    var  swerveModuleStates =
         m_kinematics.toSwerveModuleStates(
             fieldRelative
                 ? ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, rot, navx.getRotation2d())
